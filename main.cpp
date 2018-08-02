@@ -7,12 +7,6 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <linux/if_ether.h>
-#include <linux/if_arp.h>
-#include <net/ethernet.h>
-#include <netinet/in.h>
 
 #define OP_REQUEST 0x0001
 #define OP_REPLY 0x0002
@@ -152,22 +146,12 @@ while(1)
 }
     /////////////////////////////reply//////////////////////////////
 
-    /*
-    for(int i=0; i<sizeof(rpacket); i++)
-    {
-        printf("%x", rpacket[i]);
-    }
-    */
     unsigned char* arppacket = (unsigned char *)malloc(60*sizeof(unsigned char));
     struct etherheader *reethh;
     struct arpheader *rearph;
 
     reethh = (struct etherheader*)arppacket;
     memset(arppacket,0x00,60);
-   
-
-
-    
     memcpy(arppacket,rpacket+6 ,6);
     inputMacAddr(arppacket+6,mymac);
     reethh->type=htons(0x0806);
@@ -184,18 +168,11 @@ while(1)
 
     //srcmac = mymac
     inputMacAddr(arppacket+22,mymac);
-    //srcip 
-    struct ifreq ifr;
-    int fd = socket(AF_INET, SOCK_DGRAM, 0);
-    ifr.ifr_addr.sa_family = AF_INET;
-    strncpy(ifr.ifr_name, dev, IFNAMSIZ-1);
-    ioctl(fd, SIOCGIFADDR, &ifr);
-    close(fd);
 
+    //srcip
     long addr2 = inet_addr(s_ip);
     memcpy(arppacket+14+14,&addr2,4); 
-    
-
+   
     //dst mac
     memcpy(arppacket+32,rpacket+6,6);
 
@@ -240,21 +217,12 @@ unsigned char* requestpacket(char* s_ip, char* d_ip, char* mymac)
     memset(packet,0x00,60);
     ethh = (struct etherheader*)packet;
     inputMacAddr(packet,"FFFFFFFFFFFF");
-
-
-
-    
+  
     printf("mymac : %s", mymac);
+  
     inputMacAddr(packet+6,mymac);
     printf("\n");
     ethh->type=htons(0x0806);
-/*
-    for(int i=0; i<14; i++)
-    {
-        printf("%02x", packet[i]);
-    }
-    printf("\n");
-*/
     arph=(struct arpheader*)(packet+14); //expand
     arph->hardtype = htons(0x0001);
     arph->protocol = htons(0x0800);
