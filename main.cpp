@@ -7,6 +7,8 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 
 #define OP_REQUEST 0x0001
 #define OP_REPLY 0x0002
@@ -230,13 +232,13 @@ unsigned char* requestpacket(char* s_ip, char* d_ip, char* mymac)
     arph->prosize = 4;
     arph->opcode = ntohs(OP_REQUEST);
 
-    inputMacAddr(packet+ETH_HLEN+8,mymac);
+    inputMacAddr(packet+14+8,mymac);
     long ipaddr =inet_addr(s_ip);
-    memcpy(packet+ETH_HLEN+14,&ipaddr,4);
+    memcpy(packet+14+14,&ipaddr,4);
     //Destination part
-    inputMacAddr(packet+ETH_HLEN+18,"000000000000");
+    inputMacAddr(packet+14+18,"000000000000");
     ipaddr=inet_addr(d_ip);
-    memcpy(packet+ETH_HLEN+24,&ipaddr,4);
+    memcpy(packet+14+24,&ipaddr,4);
 
     return packet;
 }
@@ -250,7 +252,7 @@ void mac_eth0(unsigned char MAC_str[13], char* dev) //mac addressess
     s = socket(AF_INET, SOCK_DGRAM, 0);
     strcpy(ifr.ifr_name, dev);
     ioctl(s, SIOCGIFHWADDR, &ifr);
-    for (i=0; i<ETH_ALEN; i++)
+    for (i=0; i<6; i++)
         sprintf((char *)&MAC_str[i*2],"%02X",((unsigned char*)ifr.ifr_hwaddr.sa_data)[i]);
     //
 
